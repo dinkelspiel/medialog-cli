@@ -6,43 +6,40 @@ use json::object;
 use std::env;
 use std::fs::File;
 use std::io::Write;
-use std::process;
 use colored::*;
-use dirs::*;
-use edit::*;
+use strsim::{jaro};
 
 fn error(message: &str) {
-    eprintln!("{}: {}!", "error".bright_red(), message);
+    println!("{}: {}!", "error".bright_red(), message);
 }
 
 fn error_flat(message: &str) {
-    eprint!("{}: {}", "error".bright_red(), message);
+    print!("{}: {}", "error".bright_red(), message);
 }
 
 fn warning(message: &str, prefix: &str) {
-    eprintln!("{}: {}.", prefix.yellow(), message); 
+    println!("{}: {}.", prefix.yellow(), message); 
 }
 
 fn warning_flat(message: &str, prefix: &str) {
-    eprint!("{}: {}", prefix.yellow(), message); 
+    print!("{}: {}", prefix.yellow(), message); 
 }
 
 fn help(message: &str) {
-    eprintln!("{}: {}.", "help".bright_cyan(), message);
+    println!("{}: {}.", "help".bright_cyan(), message);
 }
 
 fn help_flat(message: &str) {
-    eprint!("{}: {}", "help".bright_cyan(), message);
-}
-
-fn stop() {
-    process::exit(0);
+    print!("{}: {}", "help".bright_cyan(), message);
 }
 
 const USAGE_PREFIX: &str = "usage";
 const OPTIONS_PREFIX: &str = "options";
 
 const CATEGORIES: [&str; 3] = ["anime", "manga", "podcast"];
+
+const STATUS: [&str; 5] = ["planned", "watching", "completed", "paused", "dropped"];
+const STATUS_LOWER: [char; 5] = ['p', 'w', 'c', 'p', 'd'];
 
 fn main() -> std::io::Result<()>  {
     let args: Vec<String> = env::args().collect();
@@ -78,12 +75,13 @@ fn main() -> std::io::Result<()>  {
     if args.len() < 2 {
         error("Must supply command in arguments");
         help("Consider running the 'help' command");
-        stop();
+        return Ok(());
     }
 
     if args[1].to_ascii_lowercase() == "add" {
         if args.len() >= 4 {
             let media_name: &str = &args[2].to_ascii_lowercase();
+            let media_display_name: &str = &args[2];
             let media_category: &str = &args[3].to_ascii_lowercase();
             if CATEGORIES.contains(&args[3].to_ascii_lowercase().as_str()) {
                 // let media_object: JsonValue = object! {
@@ -92,7 +90,10 @@ fn main() -> std::io::Result<()>  {
                 //     seasons: {}
                 // };
 
-                data[media_category][media_name] = object! {}; 
+                data[media_category][media_name] = object! {
+                    "disname": media_display_name,
+                    "status": "planned",
+                }; 
             } else {
                 error("Invalid category in command 'add'");
                 warning_flat("add <name> ", USAGE_PREFIX);
@@ -110,7 +111,94 @@ fn main() -> std::io::Result<()>  {
         } else {
             error("Insufficient arguments for command 'add'");
             warning("add <name> <category>", USAGE_PREFIX);
-            stop();
+            return Ok(());
+        }   
+    } else if args[1].to_ascii_lowercase() == "edit" {
+        if args.len() >= 4 {
+            let media_name: &str = &args[2].to_ascii_lowercase();
+            let media_category: &str = &args[3].to_ascii_lowercase();
+            if CATEGORIES.contains(&args[3].to_ascii_lowercase().as_str()) {
+                if !data[media_category].has_key(media_name) {
+                    error_flat("");
+                    println!("Media '{}' doesn't exist in category '{}'!", media_name, media_category);
+                    
+                    let mut highest_similarity: f64 = 0.0;
+                    let mut highest_similarity_media: &str = "";
+                    
+                    for i in data[media_category].entries() {
+                        // println!("{}, {}", i.0, media_name);
+                        let similarity: f64 = jaro(media_name, i.0);
+                        if similarity > highest_similarity {
+                            highest_similarity = similarity;
+                            highest_similarity_media = i.0;
+                        }
+                    }
+
+                    if highest_similarity > 0.80 {
+                        help_flat("");
+                        println!("Found media with a name with {}% similarity called '{}'.", &(highest_similarity * 100.0).to_string()[0..2], data[media_category][highest_similarity_media]["disname"]);
+                    }
+                    return Ok(());
+                }
+
+                let result: String = edit::edit(json::stringify(data[media_category][media_name].clone())).unwrap();
+                data[media_category][media_name] = json::parse(&result).unwrap();
+            } else {
+                error("Invalid category in command 'edit'");
+                warning_flat("edit <name> ", USAGE_PREFIX);
+                println!("{}", "<category>".red().bold());
+                warning_flat("", OPTIONS_PREFIX);
+                for (i, item) in CATEGORIES.iter().enumerate() {
+                    if i < CATEGORIES.len() - 1 {
+                        eprint!("{}, ", item);
+                        continue;
+                    }
+                    eprint!("{}", item);
+                }
+            } 
+
+        } else {
+            error("Insufficient arguments for command 'edit'");
+            warning("edit <name> <category>", USAGE_PREFIX);
+            return Ok(());
+        } 
+    } else if args[1].to_ascii_lowercase() == "editstatus" {
+        if args.len() >= 5 {
+            let media_name: &str = &args[3].to_ascii_lowercase();
+            let media_category: &str = &args[4].to_ascii_lowercase();
+            if CATEGORIES.contains(&args[4].to_ascii_lowercase().as_str()) {
+                if !STATUS.contains(&args[2].to_ascii_lowercase().as_str()) || !STATUS_LOWER.contains(&args[2].to_ascii_lowercase().as_str().chars().nth(0).unwrap()) {
+                    error_flat("");
+                    println!("Status '{}' doesn't exist!", args[2]);
+                    help("Consider using 'planned', 'watching', 'completed', 'paused' or 'dropped'");
+                    return Ok(());
+                }
+
+                if !data[media_category].has_key(media_name) {
+                    error_flat("");
+                    println!("Media '{}' doesn't exist in category '{}'!", media_name, media_category);
+                    return Ok(());
+                }
+
+                data[media_category][media_name]["status"] = json::parse(&args[2]).unwrap();
+            } else {
+                error("Invalid category in command 'edit'");
+                warning_flat("editstatus <status> <name> ", USAGE_PREFIX);
+                println!("{}", "<category>".red().bold());
+                warning_flat("", OPTIONS_PREFIX);
+                for (i, item) in CATEGORIES.iter().enumerate() {
+                    if i < CATEGORIES.len() - 1 {
+                        eprint!("{}, ", item);
+                        continue;
+                    }
+                    eprint!("{}", item);
+                }
+            } 
+
+        } else {
+            error("Insufficient arguments for command 'edit'");
+            warning("editstatus <status> <name> <category>", USAGE_PREFIX);
+            return Ok(());
         }   
     } else if args[1].to_ascii_lowercase() == "editseason" {
         if args.len() >= 6 {
@@ -125,14 +213,14 @@ fn main() -> std::io::Result<()>  {
                         println!("Season {} doesn't exist in media {}!", season_name, media_name);
                         help_flat("");
                         println!("Consider running 'medialog createseason {} {} {}'!", season_name, media_name, media_category);
-                        stop();
+                        return Ok(());
                     }
 
                     if !["studio", "rating", "notes", "json"].contains(&edit_object) {
                         error_flat("");
                         println!("Invalid media property {}!", edit_object);
                         help("Use 'studio', 'rating', 'notes' or 'json'!");
-                        stop();
+                        return Ok(());
                     }
                     
                     
@@ -148,7 +236,7 @@ fn main() -> std::io::Result<()>  {
                 } else {
                     error_flat("");
                     println!("Media '{}' doesn't exist in category '{}'!", media_name, media_category);
-                    stop();
+                    return Ok(());
                 }
             } else {
                 error("Invalid category in command 'editseason'");
@@ -167,18 +255,19 @@ fn main() -> std::io::Result<()>  {
         } else {
             error("Insufficient arguments for command 'editseason'");
             warning("editseason <season> <edit> <name> <category>", USAGE_PREFIX);
-            stop();
+            return Ok(());
         }    
     } else if args[1].to_ascii_lowercase() == "createseason" {
         if args.len() >= 5 {
             let season_name: &str = &args[2].to_ascii_lowercase();
             let media_name: &str = &args[3].to_ascii_lowercase();
+            let season_display: &str = &args[2]; 
             let media_category: &str = &args[4].to_ascii_lowercase();
             if CATEGORIES.contains(&args[4].to_ascii_lowercase().as_str()) {
                 if data[media_category][media_name].has_key(season_name) {
                     error_flat("");
                     println!("Media '{}' already has a season named '{}'!", media_name, season_name);
-                    stop();
+                    return Ok(());
                 }
 
                 let mut studio: String = String::from("");
@@ -187,7 +276,8 @@ fn main() -> std::io::Result<()>  {
                 }
 
                 data[media_category][media_name][season_name] = object! {
-                    "studio": json::stringify(studio),
+                    "disname": season_display,
+                    "studio": studio,
                     "rating": 0,
                     "notes": ""
                 }
@@ -208,12 +298,12 @@ fn main() -> std::io::Result<()>  {
         } else {
             error("Insufficient arguments for command 'createseason'");
             warning("createseason <season> <name> <category>", USAGE_PREFIX);
-            stop();
+            return Ok(());
         }   
     } else {
         error_flat("Could not recognize command '");
         print!("{}'!", args[1]);
-        stop();
+        return Ok(());
     }
 
     let mut path: String;
