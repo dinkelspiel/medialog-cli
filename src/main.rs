@@ -82,10 +82,10 @@ fn main() -> std::io::Result<()>  {
     }
 
     if args[1].to_ascii_lowercase() == "add" {
-        if args.len() == 4 {
-            let media_name: &str = &args[2];
-            let media_category: &str = &args[3];
-            if CATEGORIES.contains(&args[3].as_str()) {
+        if args.len() >= 4 {
+            let media_name: &str = &args[2].to_ascii_lowercase();
+            let media_category: &str = &args[3].to_ascii_lowercase();
+            if CATEGORIES.contains(&args[3].to_ascii_lowercase().as_str()) {
                 // let media_object: JsonValue = object! {
                 //     name: media_name,
                 //     category: media_category,
@@ -113,12 +113,12 @@ fn main() -> std::io::Result<()>  {
             stop();
         }   
     } else if args[1].to_ascii_lowercase() == "editseason" {
-        if args.len() == 6 {
+        if args.len() >= 6 {
             let season_name: &str = &args[2].to_ascii_lowercase();
             let edit_object: &str = &args[3].to_ascii_lowercase();
-            let media_name: &str = &args[4];
-            let media_category: &str = &args[5];
-            if CATEGORIES.contains(&args[5].as_str()) {
+            let media_name: &str = &args[4].to_ascii_lowercase();
+            let media_category: &str = &args[5].to_ascii_lowercase();
+            if CATEGORIES.contains(&args[5].to_ascii_lowercase().as_str()) {
                 if data[media_category].has_key(media_name) {
                     if !data[media_category][media_name].has_key(season_name) {
                         error_flat("");
@@ -170,19 +170,24 @@ fn main() -> std::io::Result<()>  {
             stop();
         }    
     } else if args[1].to_ascii_lowercase() == "createseason" {
-        if args.len() == 5 {
-            let season_name: &str = &args[2];
-            let media_name: &str = &args[3];
-            let media_category: &str = &args[4];
-            if CATEGORIES.contains(&args[4].as_str()) {
+        if args.len() >= 5 {
+            let season_name: &str = &args[2].to_ascii_lowercase();
+            let media_name: &str = &args[3].to_ascii_lowercase();
+            let media_category: &str = &args[4].to_ascii_lowercase();
+            if CATEGORIES.contains(&args[4].to_ascii_lowercase().as_str()) {
                 if data[media_category][media_name].has_key(season_name) {
                     error_flat("");
                     println!("Media '{}' already has a season named '{}'!", media_name, season_name);
                     stop();
                 }
 
+                let mut studio: String = String::from("");
+                if args.len() == 6 {
+                    studio = args[5].clone().to_ascii_lowercase();
+                }
+
                 data[media_category][media_name][season_name] = object! {
-                    "studio": "",
+                    "studio": json::stringify(studio),
                     "rating": 0,
                     "notes": ""
                 }
