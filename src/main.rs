@@ -36,7 +36,7 @@ fn help_flat(message: &str) {
 const USAGE_PREFIX: &str = "usage";
 const OPTIONS_PREFIX: &str = "options";
 
-const CATEGORIES: [&str; 3] = ["anime", "manga", "podcast"];
+const CATEGORIES: [&str; 5] = ["anime", "manga", "movie", "book", "podcast"];
 
 const STATUS: [&str; 5] = ["planned", "watching", "completed", "paused", "dropped"];
 const STATUS_LOWER: [char; 5] = ['p', 'w', 'c', 'p', 'd'];
@@ -89,6 +89,12 @@ fn main() -> std::io::Result<()>  {
                 //     category: media_category,
                 //     seasons: {}
                 // };
+
+                if data[media_category].has_key(media_name) {
+                    error_flat("");
+                    println!("Media '{}' in category '{}' already exists.", media_name, media_category);
+                    return Ok(());
+                }
 
                 data[media_category][media_name] = object! {
                     "disname": media_display_name,
@@ -299,7 +305,40 @@ fn main() -> std::io::Result<()>  {
             error("Insufficient arguments for command 'createseason'");
             warning("createseason <season> <name> <category>", USAGE_PREFIX);
             return Ok(());
-        }   
+        }
+    } else if args[1].to_ascii_lowercase() == "next" {
+        if args.len() >= 3 {
+            if CATEGORIES.contains(&args[2].to_ascii_lowercase().as_str()) {
+                let mut watched: bool = false;
+                for (key, value) in data[&args[2]].entries() {
+                    if value["status"] == "planned" {
+                        println!("Your next {} on the list is {}!", args[2], key);
+                        watched = true;
+                        break;
+                    }
+                }
+                if !watched {
+                    println!("You have watched all your {}.", args[2]);
+                }
+                return Ok(());
+            } else {
+                error("Invalid category in command 'next'");
+                warning_flat("next ", USAGE_PREFIX);
+                println!("{}", "<category>".red().bold());
+                warning_flat("", OPTIONS_PREFIX);
+                for (i, item) in CATEGORIES.iter().enumerate() {
+                    if i < CATEGORIES.len() - 1 {
+                        eprint!("{}, ", item);
+                        continue;
+                    }
+                    eprint!("{}", item);
+                }
+            } 
+        } else {
+            error("Insufficient arguments for command 'next'");
+            warning("createseason <category>", USAGE_PREFIX);
+            return Ok(());
+        }
     } else {
         error_flat("Could not recognize command '");
         print!("{}'!", args[1]);
