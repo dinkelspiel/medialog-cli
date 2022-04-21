@@ -36,7 +36,7 @@ fn help_flat(message: &str) {
 const USAGE_PREFIX: &str = "usage";
 const OPTIONS_PREFIX: &str = "options";
 
-const CATEGORIES: [&str; 5] = ["anime", "manga", "movie", "book", "podcast"];
+const CATEGORIES: [&str; 7] = ["anime", "manga", "movie", "book", "podcast", "liveaction", "liveactionseries"];
 
 const STATUS: [&str; 5] = ["planned", "watching", "completed", "paused", "dropped"];
 const STATUS_LOWER: [char; 5] = ['p', 'w', 'c', 'p', 'd'];
@@ -338,6 +338,10 @@ fn main() -> std::io::Result<()>  {
             error("Insufficient arguments for command 'next'");
             warning("createseason <category>", USAGE_PREFIX);
             return Ok(());
+        }
+    } else if args[1].to_ascii_lowercase().as_str() == "categories" {
+        for category in &CATEGORIES {
+            println!("{}", category);
         }
     } else {
         error_flat("Could not recognize command '");
