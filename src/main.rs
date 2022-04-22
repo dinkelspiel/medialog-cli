@@ -312,7 +312,7 @@ fn main() -> std::io::Result<()>  {
                 let mut watched: bool = false;
                 for (key, value) in data[&args[2]].entries() {
                     if value["status"] == "planned" {
-                        println!("Your next {} on the list is {}!", args[2], key);
+                        println!("Your next {} on the list is {}!", args[2], value["disname"]);
                         watched = true;
                         break;
                     }
