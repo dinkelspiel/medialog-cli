@@ -310,7 +310,7 @@ fn main() -> std::io::Result<()>  {
         if args.len() >= 3 {
             if CATEGORIES.contains(&args[2].to_ascii_lowercase().as_str()) {
                 let mut watched: bool = false;
-                for (key, value) in data[&args[2]].entries() {
+                for (_key, value) in data[&args[2]].entries() {
                     if value["status"] == "planned" {
                         println!("Your next {} on the list is {}!", args[2], value["disname"]);
                         watched = true;
@@ -343,6 +343,68 @@ fn main() -> std::io::Result<()>  {
         for category in &CATEGORIES {
             println!("{}", category);
         }
+    } else if args[1].to_ascii_lowercase().as_str() == "rank" {
+        if args.len() >= 3 {
+            struct Obj {
+                pub name: String,
+                pub season: String,
+                pub rating: i32,
+                pub _studio: String
+            }
+
+            let mut highest_rated: Vec<Obj> = vec![];
+            if CATEGORIES.contains(&args[2].to_ascii_lowercase().as_str()) {
+                for (key, value) in data[&args[2].to_ascii_lowercase()].entries() {
+                    for (key2, value2) in value.entries() {
+                        if key2 != "disname" && key2 != "status" {
+                            if json::stringify(value2["rating"].to_string()).replace("\"", "") != "0" {
+                                highest_rated.push(Obj {
+                                    name: key.to_string(), 
+                                    season: key2.to_string(),
+                                    rating: json::stringify(value2["rating"].to_string()).replace("\"", "").parse::<i32>().unwrap(),
+                                    _studio: json::stringify(value2["studio"].to_string())
+                                });
+                            }
+                        }
+                    }
+                }
+            } else if &args[2].to_ascii_lowercase().as_str() == &"all" {
+                for category in CATEGORIES {
+                    for (key, value) in data[category].entries() {
+                        for (key2, value2) in value.entries() {
+                            if key2 != "disname" && key2 != "status" {
+                                if json::stringify(value2["rating"].to_string()).replace("\"", "") != "0" && json::stringify(value2["rating"].to_string()).replace("\"", "") != "null" {
+                                    highest_rated.push(Obj {
+                                        name: key.to_string(), 
+                                        season: key2.to_string(),
+                                        rating: json::stringify(value2["rating"].to_string()).replace("\"", "").parse::<i32>().unwrap(),
+                                        _studio: json::stringify(value2["studio"].to_string())
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+            } else {
+                error("Argument 2 of command 'rank' must be a category or 'all'");
+            }
+
+            highest_rated.sort_by_key(|k| k.rating);
+            highest_rated.reverse();
+            for i in highest_rated {
+                println!("Name: {}, Season: {}, Rating: {}", i.name.cyan(), i.season.cyan(), i.rating.to_string().cyan());
+            }
+        }
+    } else if args[1].to_ascii_lowercase().as_str() == "help" {
+        println!("add <name> <category>                             Adds the specified media to the specified category.");
+        println!("edit <name> <category>                            Opens the JSON for the specified media in the specified category.");
+        println!("editstatus <status> <name> <category>             Changes the status of the specified media in the specified category.");
+        println!("editseason <season> <edit> <name> <category>      Opens the given edit region for the specified season.");
+        println!("                                                  Edit Regions: studio, rating, notes, json");
+        println!("createseason <season> <name> <category>           Adds a season with the specified name.");
+        println!("next <category>                                   Prints the next media in the specified category that has the status 'planned'.");
+        println!("categories                                        Prints all available categories.");
+        println!("rank <category || 'all'>                          Prints the media in the specified category or in 'all' ranked by the rating specified.");
     } else {
         error_flat("Could not recognize command '");
         print!("{}'!", args[1]);
