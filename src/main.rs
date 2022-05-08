@@ -359,8 +359,8 @@ fn main() -> std::io::Result<()>  {
                         if key2 != "disname" && key2 != "status" {
                             if json::stringify(value2["rating"].to_string()).replace("\"", "") != "0" {
                                 highest_rated.push(Obj {
-                                    name: json::stringify(value["disname"].to_string()),
-                                    season: json::stringify(value2["disname"].to_string()),
+                                    name: json::stringify(value["disname"].to_string()).replace("\"", ""),
+                                    season: json::stringify(value2["disname"].to_string()).replace("\"", ""),
                                     rating: json::stringify(value2["rating"].to_string()).replace("\"", "").parse::<i32>().unwrap(),
                                     _studio: json::stringify(value2["studio"].to_string())
                                 });
