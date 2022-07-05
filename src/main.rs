@@ -36,7 +36,7 @@ fn help_flat(message: &str) {
 const USAGE_PREFIX: &str = "usage";
 const OPTIONS_PREFIX: &str = "options";
 
-const CATEGORIES: [&str; 4] = ["series", "movie", "book", "podcast"];
+const CATEGORIES: [&str; 5] = ["series", "movie", "book", "podcast", "game"];
 
 const STATUS: [&str; 5] = ["planned", "watching", "completed", "paused", "dropped"];
 const STATUS_LOWER: [char; 5] = ['p', 'w', 'c', 'p', 'd'];
