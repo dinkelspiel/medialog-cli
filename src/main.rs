@@ -148,7 +148,11 @@ fn main() -> std::io::Result<()>  {
                 }
 
                 let result: String = edit::edit(json::stringify(data[media_category][media_name].clone())).unwrap();
-                data[media_category][media_name] = json::parse(&result).unwrap();
+                let jsonresult = json::parse(&result);
+                data[media_category][media_name] = match jsonresult {
+                    Ok(json) => json,
+                    Err(error) => panic!("Problem parsing json: {} \n{:?}", &result.cyan(), error)
+                }
             } else {
                 error("Invalid category in command 'edit'");
                 warning_flat("edit <name> ", USAGE_PREFIX);
@@ -237,7 +241,11 @@ fn main() -> std::io::Result<()>  {
                     } else {
                         let result: String = edit::edit(json::stringify(data[media_category][media_name][season_name].clone())).unwrap();
 
-                        data[media_category][media_name][season_name] = json::parse(&result).unwrap();
+                        let jsonresult = json::parse(&result);
+                        data[media_category][media_name][season_name] = match jsonresult {
+                            Ok(json) => json,
+                            Err(error) => panic!("Problem parsing json: {} \n{:?}", &result.cyan(), error)
+                        }
                     }
                 } else {
                     error_flat("");
