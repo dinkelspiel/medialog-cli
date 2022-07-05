@@ -218,7 +218,7 @@ fn main() -> std::io::Result<()>  {
                         error_flat("");
                         println!("Season {} doesn't exist in media {}!", season_name, media_name);
                         help_flat("");
-                        println!("Consider running 'medialog createseason {} {} {}'!", season_name, media_name, media_category);
+                        println!("Consider running 'medialog addseason {} {} {}'!", season_name, media_name, media_category);
                         return Ok(());
                     }
 
@@ -263,7 +263,7 @@ fn main() -> std::io::Result<()>  {
             warning("editseason <season> <edit> <name> <category>", USAGE_PREFIX);
             return Ok(());
         }    
-    } else if args[1].to_ascii_lowercase() == "createseason" {
+    } else if args[1].to_ascii_lowercase() == "addseason" {
         if args.len() >= 5 {
             let season_name: &str = &args[2].to_ascii_lowercase();
             let media_name: &str = &args[3].to_ascii_lowercase();
@@ -288,8 +288,8 @@ fn main() -> std::io::Result<()>  {
                     "notes": ""
                 }
             } else {
-                error("Invalid category in command 'createseason'");
-                warning_flat("createseason <season> <name> ", USAGE_PREFIX);
+                error("Invalid category in command 'addseason'");
+                warning_flat("addseason <season> <name> ", USAGE_PREFIX);
                 println!("{}", "<category>".red().bold());
                 warning_flat("", OPTIONS_PREFIX);
                 for (i, item) in CATEGORIES.iter().enumerate() {
@@ -302,8 +302,8 @@ fn main() -> std::io::Result<()>  {
             } 
 
         } else {
-            error("Insufficient arguments for command 'createseason'");
-            warning("createseason <season> <name> <category>", USAGE_PREFIX);
+            error("Insufficient arguments for command 'addseason'");
+            warning("addseason <season> <name> <category>", USAGE_PREFIX);
             return Ok(());
         }
     } else if args[1].to_ascii_lowercase() == "next" {
@@ -336,7 +336,7 @@ fn main() -> std::io::Result<()>  {
             } 
         } else {
             error("Insufficient arguments for command 'next'");
-            warning("createseason <category>", USAGE_PREFIX);
+            warning("addseason <category>", USAGE_PREFIX);
             return Ok(());
         }
     } else if args[1].to_ascii_lowercase().as_str() == "categories" {
@@ -401,7 +401,7 @@ fn main() -> std::io::Result<()>  {
         println!("editstatus <status> <name> <category>             Changes the status of the specified media in the specified category.");
         println!("editseason <season> <edit> <name> <category>      Opens the given edit region for the specified season.");
         println!("                                                  Edit Regions: studio, rating, notes, json");
-        println!("createseason <season> <name> <category>           Adds a season with the specified name.");
+        println!("addseason <season> <name> <category>              Adds a season with the specified name.");
         println!("next <category>                                   Prints the next media in the specified category that has the status 'planned'.");
         println!("categories                                        Prints all available categories.");
         println!("rank <category || 'all'>                          Prints the media in the specified category or in 'all' ranked by the rating specified.");
