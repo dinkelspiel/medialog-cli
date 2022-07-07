@@ -124,32 +124,38 @@ fn main() -> std::io::Result<()>  {
             let media_name: &str = &args[2].to_ascii_lowercase();
             let media_category: &str = &args[3].to_ascii_lowercase();
             if CATEGORIES.contains(&args[3].to_ascii_lowercase().as_str()) {
-                if !data[media_category].has_key(media_name) {
+                let mut fixed_media_name: String;
+
+                if !&data[media_category].has_key(media_name) {
                     error_flat("");
-                    println!("Media '{}' doesn't exist in category '{}'!", media_name, media_category);
-                    
                     let mut highest_similarity: f64 = 0.0;
-                    let mut highest_similarity_media: &str = "";
+                    let mut highest_similarity_media: String = String::from("");
                     
                     for i in data[media_category].entries() {
                         // println!("{}, {}", i.0, media_name);
                         let similarity: f64 = jaro(media_name, i.0);
                         if similarity > highest_similarity {
                             highest_similarity = similarity;
-                            highest_similarity_media = i.0;
+                            highest_similarity_media = String::from(i.0);
                         }
                     }
 
                     if highest_similarity > 0.80 {
                         help_flat("");
-                        println!("Found media with a name with {}% similarity called '{}'.", &(highest_similarity * 100.0).to_string()[0..2], data[media_category][highest_similarity_media]["disname"]);
+                        println!("Found media with a name with {}% similarity called '{}'.", &(highest_similarity * 100.0).to_string()[0..2], data[media_category][&highest_similarity_media]["disname"]);
+                        
+                        fixed_media_name = highest_similarity_media;
+                    } else {
+                        println!("Media '{}' doesn't exist in category '{}'!", media_name, media_category);
+                        return Ok(())
                     }
-                    return Ok(());
+                } else {
+                    fixed_media_name = String::from(media_name);
                 }
 
-                let result: String = edit::edit(json::stringify(data[media_category][media_name].clone())).unwrap();
+                let result: String = edit::edit(json::stringify(data[media_category][&fixed_media_name].clone())).unwrap();
                 let jsonresult = json::parse(&result);
-                data[media_category][media_name] = match jsonresult {
+                data[media_category][&fixed_media_name] = match jsonresult {
                     Ok(json) => json,
                     Err(error) => panic!("Problem parsing json: {} \n{:?}", &result.cyan(), error)
                 }
